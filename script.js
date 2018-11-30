@@ -697,7 +697,7 @@ function startStream() {
   //document.getElementById('meeting-name').value || 'Simple Meeting';
 
   window.meeting.setup(meetingRoomName);
-  console.log('<h2><a href=https://thankful-substance.glitch.me/' + window.channel + ' target="_blank">View Link</a></h2>');
+  console.log('<h2><a href='+ location.href + window.channel + ' target="_blank">View Link</a></h2>');
   
   // var node = document.createElement("LI");                 // Create a <li> node
   // var textnode = document.createTextNode("Water");         // Create a text node
@@ -716,7 +716,7 @@ function startStream() {
   var a = document.getElementById("stream-button").children[0]
   a.setAttribute("target", "_blank");
   a.innerHTML = "SHARE STREAM"
-  a.href = "https://thankful-substance.glitch.me/" + window.channel;
+  a.href = location.href + window.channel;
   // a.className = "button";
   window.watching = 0;
 }
