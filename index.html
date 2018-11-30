@@ -30,8 +30,8 @@
             <div class="w-row">
                <div class="brand-column w-col w-col-4">
                   <img src="https://uploads-ssl.webflow.com/5bfef6fc1f55a971e87133b1/5bff03494a02e1638f06b0b6_laptop.svg" width="41px" alt="" class="logo"/>
-                  <div class="company">livecodestream</div>
-               </div>
+                  <div class="company">livecodestream</div>                 
+               </div>                          
                <nav class="nav-column w-col w-col-8"></nav>
             </div>
          </div>
@@ -41,12 +41,14 @@
          <div class="w-container">
             <h1 class="hero-heading">Stream your live coding session</h1>
             <p class="hero-subhead">No more complicated setup, just one click straight from your browser</p>
-            <div class="button-group" id="stream-button"><a href="javascript:startStream();" target="_blank" class="button sign-up">Start Streaming</a><a href="#features" class="button">see features</a></div>
+            <div class="button-group" id="stream-button"><a href="javascript:startStream();" target="_blank" class="button sign-up">Start Streaming</a><a href="#features" class="button">see features</a></div>           
            <div id="loader" class="centered"></div>      
             <div id="loader_text">Loading stream...</div>      
-            
            <div id="local-streams-container"></div>
             <div id="remote-streams-container"></div>
+             <p class="hero-subhead">
+                <img src="https://cdn.glitch.com/f00c6b62-f4ae-4828-8ac7-347370700740%2Finfo.svg?1543615224996" width="20px" alt=""/>
+                Experimental to stream please enable <i>chrome://flags/#enable-experimental-web-platform-features</i></p>
             <script>                
                 var meeting = new Meeting();
                 window.meeting = meeting;
