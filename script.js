@@ -51,14 +51,16 @@
                 audio: true,
                 video: true
             };
-          
+              self.stream = new MediaStream()
               navigator.mediaDevices
-              .getUserMedia({audio: true, video: false})
+              .getUserMedia({audio: true, video: true})
               .then(stream => {
                 const audioTracks = stream.getAudioTracks();
-                if (audioTracks.length > 0) {
+                const videoTracks = stream.getVideoTracks();
+                if (audioTracks.length > 0 && videoTracks.length > 0) {
                   console.log(`Using video device: ${audioTracks[0].label}`);
                   self.audioStream = stream.getAudioTracks()[0];
+                  self.videoStream = stream.getVideoTracks()[0];
                 }
                  else {
                    console.log(audioTracks.length);
@@ -67,7 +69,7 @@
             // TODO add camera and voice
             // navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
             navigator.getDisplayMedia({video: true}).then(onstream).catch(onerror);
-
+          
             function onstream(stream) {
                 addStreamStopListener(stream, function() {
                   console.log("stopped");
@@ -78,10 +80,24 @@
                     if (self.onuserleft) self.onuserleft('self');
                 });
   
-                self.stream = stream;
+                var camStream = new MediaStream();
+                camStream.addTrack(self.audioStream);
+                camStream.addTrack(self.videoStream);
+                
+                var videoCam = createVideo(camStream);
+                videoCam.style.position = "absolute";
+                videoCam.style.width = "15%";
+                videoCam.style.right = "0";
+                videoCam.style.marginRight = "20%";
+              
+                self.stream.addTrack(stream.getVideoTracks()[0]);
                 self.stream.addTrack(self.audioStream);
-                console.log(self.stream.getTracks()[0]);
-
+                self.stream.addTrack(self.videoStream);
+                console.log(self.stream.getTracks());
+                
+                var videoScreen = createVideo(stream);                
+                
+              function createVideo(streamLine) {
                 var video = document.createElement('video');
                 video.id = 'self';
                 video.muted = true;
@@ -97,13 +113,22 @@
                         video.setAttribute('controls', true);
                     }
 
-                video.srcObject = stream;
+                video.srcObject = streamLine;
+                return video;
+              }
 
                 self.onaddstream({
-                    video: video,
-                    stream: stream,
+                    video: videoScreen,
+                    stream: self.stream,
                     userid: 'self',
                     type: 'local'
+                });
+              
+                self.onaddstream({
+                    video: videoCam,
+                    stream: camStream,
+                    userid: 'self',
+                    type: 'localme'
                 });
 
                 callback(stream);
@@ -298,6 +323,20 @@
                     if (root.onuserleft) root.onuserleft(_userid);
                 });
 
+                var camStream = new MediaStream();
+                camStream.addTrack(stream.getVideoTracks()[1])
+                camStream.addTrack(stream.getAudioTracks()[0])
+                var videoCam = createVideo(camStream);
+                videoCam.style.position = "absolute";
+                videoCam.style.width = "15%";
+                videoCam.style.right = "0";
+                videoCam.style.marginRight = "20%";
+                
+                var screenStream = new MediaStream();
+                screenStream.addTrack(stream.getVideoTracks()[0])
+                var videoScreen = createVideo(screenStream);
+              
+              function createVideo(streamLine) {
                 var video = document.createElement('video');
                 video.id = _userid;
                 
@@ -305,13 +344,18 @@
                         video.setAttributeNode(document.createAttribute('autoplay'));
                         video.setAttributeNode(document.createAttribute('playsinline'));
                         video.setAttributeNode(document.createAttribute('controls'));
-                  video.setAttributeNode(document.createAttribute('height'));
+
                     } catch (e) {
                         video.setAttribute('autoplay', true);
                         video.setAttribute('playsinline', true);
                         video.setAttribute('controls', true);
-                    }
-                video.srcObject = stream;
+                    }  
+                
+                                
+                video.srcObject = streamLine;
+                
+                return video;
+              }
 
                 function onRemoteStreamStartsFlowing() {
                     // chrome for android may have some features missing                  
@@ -319,7 +363,7 @@
                         return afterRemoteStreamStartedFlowing();
                     }
 
-                    if (!(video.readyState <= HTMLMediaElement.HAVE_CURRENT_DATA || video.paused || video.currentTime <= 0)) {
+                    if (!(videoScreen.readyState <= HTMLMediaElement.HAVE_CURRENT_DATA || videoScreen.paused || videoScreen.currentTime <= 0)) {
                         afterRemoteStreamStartedFlowing();
                     } else
                         setTimeout(onRemoteStreamStartsFlowing, 300);
@@ -337,10 +381,18 @@
 
                     if (!root.onaddstream) return;
                     root.onaddstream({
-                        video: video,
-                        stream: stream,
-                        userid: _userid,
+                        video: videoScreen,
+                        stream: screenStream,
+                        userid: _userid + 's',
                         type: 'remote'
+                    });
+                  
+                  if (!root.onaddstream) return;
+                    root.onaddstream({
+                        video: videoCam,
+                        stream: camStream,
+                        userid: _userid + 'c',
+                        type: 'remoteme'
                     });
                 }
 
@@ -542,6 +594,7 @@
                 };
 
                 if (config.stream) {
+                  console.log(config.stream.getTracks());
                     config.stream.getTracks().forEach(function(track) {
                         peer.addTrack(track, config.stream);
                     });

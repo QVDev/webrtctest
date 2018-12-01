@@ -70,7 +70,9 @@
                 // on getting media stream
                 meeting.onaddstream = function (e) {
                     if (e.type == 'local') localMediaStream.appendChild(e.video);
+                    if (e.type == 'localme') localMediaStream.appendChild(e.video);
                     if (e.type == 'remote') remoteMediaStreams.insertBefore(e.video, remoteMediaStreams.firstChild);
+                    if (e.type == 'remoteme') remoteMediaStreams.insertBefore(e.video, remoteMediaStreams.firstChild);
                 };
                 
                 // via: https://github.com/muaz-khan/WebRTC-Experiment/tree/master/websocket-over-nodejs
