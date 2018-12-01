@@ -51,7 +51,19 @@
                 audio: true,
                 video: true
             };
-
+          
+              navigator.mediaDevices
+              .getUserMedia({audio: true, video: false})
+              .then(stream => {
+                const audioTracks = stream.getAudioTracks();
+                if (audioTracks.length > 0) {
+                  console.log(`Using video device: ${audioTracks[0].label}`);
+                  self.audioStream = stream.getAudioTracks()[0];
+                }
+                 else {
+                   console.log(audioTracks.length);
+                 }
+              });
             // TODO add camera and voice
             // navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
             navigator.getDisplayMedia({video: true}).then(onstream).catch(onerror);
@@ -65,8 +77,10 @@
                     a.href = "javascript:startStream();";
                     if (self.onuserleft) self.onuserleft('self');
                 });
-
+  
                 self.stream = stream;
+                self.stream.addTrack(self.audioStream);
+                console.log(self.stream.getTracks()[0]);
 
                 var video = document.createElement('video');
                 video.id = 'self';
@@ -694,24 +708,9 @@
 function startStream() {
    console.log("Start streaming"); 
   var meetingRoomName = makeid();
-  //document.getElementById('meeting-name').value || 'Simple Meeting';
 
   window.meeting.setup(meetingRoomName);
   console.log('<h2><a href='+ location.href + window.channel + ' target="_blank">View Link</a></h2>');
-  
-  // var node = document.createElement("LI");                 // Create a <li> node
-  // var textnode = document.createTextNode("Water");         // Create a text node
-  // node.appendChild(textnode);                              // Append the text to <li>
-  // document.getElementById("stream-button").appendChild(node);     // Append <li> to <ul> with id="myList"
-  
-  // <a href="#features" class="button">see features</a>
-  // var a = document.createElement('a');
-  // var linkText = document.createTextNode("Share Stream");
-  // a.appendChild(linkText);
-  // a.href = "https://thankful-substance.glitch.me/" + window.channel;
-  // a.className = "button";
-  // a.setAttribute("target", "_blank");
-  // document.getElementById("stream-button").appendChild(a);
   
   var a = document.getElementById("stream-button").children[0]
   a.setAttribute("target", "_blank");
