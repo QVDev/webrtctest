@@ -81,8 +81,8 @@
                 });
   
                 self.stream.fullcanvas = true;
-                self.stream.width = screen.width; // or 3840
-                self.stream.height = screen.height; // or 2160 
+                self.stream.width = 1280; // or 3840
+                self.stream.height = 720; // or 2160 
               
                 var camStream = new MediaStream();
                 camStream.addTrack(self.audioStream);
@@ -92,12 +92,6 @@
                 camStream.height = parseInt((20 / 100) * self.stream.height);
                 camStream.top = self.stream.height - camStream.height;
                 camStream.left = self.stream.width - camStream.width;
-                
-                // var videoCam = createVideo(camStream);
-                // videoCam.style.position = "absolute";
-                // videoCam.style.width = "15%";
-                // videoCam.style.right = "0";
-                // videoCam.style.marginRight = "20%";
               
                 self.stream.addTrack(stream.getVideoTracks()[0]);
                 self.stream.addTrack(self.audioStream);
@@ -341,9 +335,10 @@
                 var screenStream = new MediaStream();
                 screenStream.addTrack(stream.getVideoTracks()[0])
                 
+//               1280 x 720
                 screenStream.fullcanvas = true;
-                screenStream.width = screen.width; // or 3840
-                screenStream.height = screen.height; // or 2160 
+                screenStream.width = 1280; // or 3840
+                screenStream.height = 720; // or 2160 
 
                 var camStream = new MediaStream();
                 camStream.addTrack(stream.getVideoTracks()[1])
