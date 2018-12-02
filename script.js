@@ -139,13 +139,13 @@
                 //     userid: 'self',
                 //     type: 'localme'
                 // });
-
+                document.getElementsByTagName("canvas")[0].style.display = 'none'
                 callback(mixer.getMixedStream());
             }
 
             function onerror(e) {
                 console.error(e);
-            }
+            }          
         }
 
         // setup new meeting room
@@ -393,6 +393,7 @@
                     // for video conferencing
                   document.getElementById("loader").style.display = "none";
                   document.getElementById("loader_text").style.display = "none";
+                  document.getElementsByTagName("canvas")[0].style.display = 'none'
                     signaler.isbroadcaster &&
                         signaler.signal({
                             conferencing: true,
