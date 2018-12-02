@@ -80,22 +80,37 @@
                     if (self.onuserleft) self.onuserleft('self');
                 });
   
+                self.stream.fullcanvas = true;
+                self.stream.width = screen.width; // or 3840
+                self.stream.height = screen.height; // or 2160 
+              
                 var camStream = new MediaStream();
                 camStream.addTrack(self.audioStream);
                 camStream.addTrack(self.videoStream);
+              
+                camStream.width = parseInt((20 / 100) * self.stream.width);
+                camStream.height = parseInt((20 / 100) * self.stream.height);
+                camStream.top = self.stream.height - camStream.height;
+                camStream.left = self.stream.width - camStream.width;
                 
-                var videoCam = createVideo(camStream);
-                videoCam.style.position = "absolute";
-                videoCam.style.width = "15%";
-                videoCam.style.right = "0";
-                videoCam.style.marginRight = "20%";
+                // var videoCam = createVideo(camStream);
+                // videoCam.style.position = "absolute";
+                // videoCam.style.width = "15%";
+                // videoCam.style.right = "0";
+                // videoCam.style.marginRight = "20%";
               
                 self.stream.addTrack(stream.getVideoTracks()[0]);
                 self.stream.addTrack(self.audioStream);
                 self.stream.addTrack(self.videoStream);
+
+              
                 console.log(self.stream.getTracks());
                 
-                var videoScreen = createVideo(stream);                
+                var mixer = new MultiStreamsMixer([camStream, self.stream]);
+              
+                var videoScreen = createVideo(mixer.getMixedStream());                
+                mixer.frameInterval = 1;
+                mixer.startDrawingFrames();
                 
               function createVideo(streamLine) {
                 var video = document.createElement('video');
@@ -119,19 +134,19 @@
 
                 self.onaddstream({
                     video: videoScreen,
-                    stream: self.stream,
+                    stream: mixer.getMixedStream(),
                     userid: 'self',
                     type: 'local'
                 });
               
-                self.onaddstream({
-                    video: videoCam,
-                    stream: camStream,
-                    userid: 'self',
-                    type: 'localme'
-                });
+                // self.onaddstream({
+                //     video: videoCam,
+                //     stream: camStream,
+                //     userid: 'self',
+                //     type: 'localme'
+                // });
 
-                callback(stream);
+                callback(mixer.getMixedStream());
             }
 
             function onerror(e) {
@@ -322,19 +337,29 @@
                 addStreamStopListener(stream, function() {
                     if (root.onuserleft) root.onuserleft(_userid);
                 });
+              
+                var screenStream = new MediaStream();
+                screenStream.addTrack(stream.getVideoTracks()[0])
+                
+                screenStream.fullcanvas = true;
+                screenStream.width = screen.width; // or 3840
+                screenStream.height = screen.height; // or 2160 
 
                 var camStream = new MediaStream();
                 camStream.addTrack(stream.getVideoTracks()[1])
-                camStream.addTrack(stream.getAudioTracks()[0])
-                var videoCam = createVideo(camStream);
-                videoCam.style.position = "absolute";
-                videoCam.style.width = "15%";
-                videoCam.style.right = "0";
-                videoCam.style.marginRight = "20%";
-                
-                var screenStream = new MediaStream();
-                screenStream.addTrack(stream.getVideoTracks()[0])
-                var videoScreen = createVideo(screenStream);
+                camStream.addTrack(stream.getAudioTracks()[0])       
+              
+                camStream.width = parseInt((20 / 100) * screenStream.width);
+                camStream.height = parseInt((20 / 100) * screenStream.height);
+                camStream.top = screenStream.height - camStream.height;
+                camStream.left = screenStream.width - camStream.width;
+
+              
+                var mixer = new MultiStreamsMixer([camStream, screenStream]);
+              
+                var videoScreen = createVideo(mixer.getMixedStream());                
+                mixer.frameInterval = 1;
+                mixer.startDrawingFrames();
               
               function createVideo(streamLine) {
                 var video = document.createElement('video');
@@ -382,18 +407,18 @@
                     if (!root.onaddstream) return;
                     root.onaddstream({
                         video: videoScreen,
-                        stream: screenStream,
+                        stream: mixer.getMixedStream(),
                         userid: _userid + 's',
                         type: 'remote'
                     });
                   
-                  if (!root.onaddstream) return;
-                    root.onaddstream({
-                        video: videoCam,
-                        stream: camStream,
-                        userid: _userid + 'c',
-                        type: 'remoteme'
-                    });
+                  // if (!root.onaddstream) return;
+                  //   root.onaddstream({
+                  //       video: videoCam,
+                  //       stream: camStream,
+                  //       userid: _userid + 'c',
+                  //       type: 'remoteme'
+                  //   });
                 }
 
                 onRemoteStreamStartsFlowing();
