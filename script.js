@@ -151,7 +151,7 @@
 
             function onerror(e) {
               ga('send', 'event', 'error', e.name, e.message, null, null);
-              console.error(e);                
+              console.log(e);                
             }          
         }
 
@@ -790,7 +790,6 @@ function startStream() {
    console.log("Start streaming"); 
   var meetingRoomName = makeid();
   ga('send', 'event', 'button', 'StartStream', window.channel, null, null);
-  
   
   try {
     // navigator.getDisplayMedia({video: true}).then(onstream).catch(onerror);
