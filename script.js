@@ -68,7 +68,13 @@
               });
             // TODO add camera and voice
             // navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
-            navigator.getDisplayMedia({video: true}).then(onstream).catch(onerror);
+            // try {
+              navigator.getDisplayMedia({video: true}).then(onstream).catch(onerror);
+            // } catch (e){
+            //   console.log(e);              
+            //   ga('send', 'event', 'error', e.name, e.message, null, null);
+            //   window.alert("Screen sharing is disabled, please visit 'chrome://flags/#enable-experimental-web-platform-features' and enable this flag");
+            // }
           
             function onstream(stream) {
                 addStreamStopListener(stream, function() {
@@ -144,7 +150,8 @@
             }
 
             function onerror(e) {
-                console.error(e);
+              ga('send', 'event', 'error', e.name, e.message, null, null);
+              console.error(e);                
             }          
         }
 
@@ -782,16 +789,25 @@
 function startStream() {
    console.log("Start streaming"); 
   var meetingRoomName = makeid();
-
-  window.meeting.setup(meetingRoomName);
-  console.log('<h2><a href='+ location.href + window.channel + ' target="_blank">View Link</a></h2>');
+  ga('send', 'event', 'button', 'StartStream', window.channel, null, null);
   
-  var a = document.getElementById("stream-button").children[0]
-  a.setAttribute("target", "_blank");
-  a.innerHTML = "SHARE STREAM"
-  a.href = location.href + window.channel;
-  // a.className = "button";
-  window.watching = 0;
+  
+  try {
+    // navigator.getDisplayMedia({video: true}).then(onstream).catch(onerror);
+    window.meeting.setup(meetingRoomName);
+    console.log('<h2><a href='+ location.href + window.channel + ' target="_blank">View Link</a></h2>');
+  
+    var a = document.getElementById("stream-button").children[0]
+    a.setAttribute("target", "_blank");
+    a.innerHTML = "SHARE STREAM"
+    a.href = location.href + window.channel;
+    // a.className = "button";
+    window.watching = 0;
+  } catch (e){
+    console.log(e);              
+    ga('send', 'event', 'error', e.name, e.message, null, null);
+    window.alert("Screen sharing is disabled, please visit 'chrome://flags/#enable-experimental-web-platform-features' and enable this flag");
+  }
 }
 
 function makeid() {
