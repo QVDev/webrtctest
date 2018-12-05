@@ -10,8 +10,8 @@
 // meeting.js
 
 (function () {
-      
-    if(typeof adapter === 'undefined' || typeof adapter.browserDetails === 'undefined') {
+
+    if (typeof adapter === 'undefined' || typeof adapter.browserDetails === 'undefined') {
         // https://webrtc.github.io/adapter/adapter-latest.js
         console.warn('adapter.js is recommended.');
     }
@@ -23,7 +23,7 @@
         };
     }
 
-    if(typeof IceServersHandler === 'undefined') {
+    if (typeof IceServersHandler === 'undefined') {
         // https:/cdn.webrtc-experiment.com/IceServersHandler.js
         console.warn('IceServersHandler.js is recommended.');
     }
@@ -32,7 +32,11 @@
     window.Meeting = function (channel) {
         var signaler, self = this;
         // this.channel = channel || location.href.replace(/\/|:|#|%|\.|\[|\]/g, '');
-      this.channel = channel || window.channel;
+        this.channel = channel || window.channel;
+
+        var width = window.innerWidth;
+        var height = window.innerHeight;
+        var streams = [];
 
         // get alerted for each new meeting
         this.onmeeting = function (room) {
@@ -51,74 +55,50 @@
                 audio: true,
                 video: true
             };
-              self.stream = new MediaStream()
-              navigator.mediaDevices
-              .getUserMedia({audio: true, video: true})
-              .then(stream => {
-                const audioTracks = stream.getAudioTracks();
-                const videoTracks = stream.getVideoTracks();
-                if (audioTracks.length > 0 && videoTracks.length > 0) {
-                  console.log(`Using video device: ${audioTracks[0].label}`);
-                  self.audioStream = stream.getAudioTracks()[0];
-                  self.videoStream = stream.getVideoTracks()[0];
-                }
-                 else {
-                   console.log(audioTracks.length);
-                 }
-              });
-            // TODO add camera and voice
-            // navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
-            // try {
-              navigator.getDisplayMedia({video: true}).then(onstream).catch(onerror);
-            // } catch (e){
-            //   console.log(e);              
-            //   ga('send', 'event', 'error', e.name, e.message, null, null);
-            //   window.alert("Screen sharing is disabled, please visit 'chrome://flags/#enable-experimental-web-platform-features' and enable this flag");
-            // }
-          
+            self.stream = new MediaStream()
+            navigator.mediaDevices
+                .getUserMedia({ audio: true, video: true })
+                .then(stream => {    
+                    stream.width = parseInt((20 / 100) * width);
+                    stream.height = parseInt((20 / 100) * height);
+                    stream.top = height - stream.height;
+                    stream.left = width - stream.width;
+
+                    streams.push(stream);
+                });
+
+            navigator.getDisplayMedia({ video: true }).then(onstream).catch(onerror);
+
             function onstream(stream) {
-                addStreamStopListener(stream, function() {
-                  console.log("stopped");
+                addStreamStopListener(stream, function () {
+                    console.log("stopped");
                     var a = document.getElementById("stream-button").children[0]
                     a.setAttribute("target", "_blank");
                     a.innerHTML = "START STREAMING"
                     a.href = "javascript:startStream();";
                     if (self.onuserleft) self.onuserleft('self');
                 });
-  
-                self.stream.fullcanvas = true;
-                self.stream.width = 1280; // or 3840
-                self.stream.height = 720; // or 2160 
-              
-                var camStream = new MediaStream();
-                camStream.addTrack(self.audioStream);
-                camStream.addTrack(self.videoStream);
-              
-                camStream.width = parseInt((20 / 100) * self.stream.width);
-                camStream.height = parseInt((20 / 100) * self.stream.height);
-                camStream.top = self.stream.height - camStream.height;
-                camStream.left = self.stream.width - camStream.width;
-              
-                self.stream.addTrack(stream.getVideoTracks()[0]);
-                self.stream.addTrack(self.audioStream);
-                self.stream.addTrack(self.videoStream);
 
-              
-                console.log(self.stream.getTracks());
-                
-                var mixer = new MultiStreamsMixer([camStream, self.stream]);
-              
-                var videoScreen = createVideo(mixer.getMixedStream());                
+                stream.fullcanvas = true;
+                stream.width = width;
+                stream.height = height;
+
+                streams.push(stream);
+                var mixer = new MultiStreamsMixer(streams);                
+
+                var videoScreen = createVideo(mixer.getMixedStream());
                 mixer.frameInterval = 1;
                 mixer.startDrawingFrames();
-                
-              function createVideo(streamLine) {
-                var video = document.createElement('video');
-                video.id = 'self';
-                video.muted = true;
-                video.volume = 0;
-                
-                try {
+
+                self.stream = mixer.getMixedStream();
+
+                function createVideo(streamLine) {
+                    var video = document.createElement('video');
+                    video.id = 'self';
+                    video.muted = true;
+                    video.volume = 0;
+
+                    try {
                         video.setAttributeNode(document.createAttribute('autoplay'));
                         video.setAttributeNode(document.createAttribute('playsinline'));
                         video.setAttributeNode(document.createAttribute('controls'));
@@ -128,17 +108,17 @@
                         video.setAttribute('controls', true);
                     }
 
-                video.srcObject = streamLine;
-                return video;
-              }
+                    video.srcObject = streamLine;
+                    return video;
+                }
 
                 self.onaddstream({
                     video: videoScreen,
-                    stream: mixer.getMixedStream(),
+                    stream: self.stream,
                     userid: 'self',
                     type: 'local'
                 });
-              
+
                 // self.onaddstream({
                 //     video: videoCam,
                 //     stream: camStream,
@@ -150,9 +130,9 @@
             }
 
             function onerror(e) {
-              ga('send', 'event', 'error', e.name, e.message, null, null);
-              console.log(e);                
-            }          
+                ga('send', 'event', 'error', e.name, e.message, null, null);
+                console.log(e);
+            }
         }
 
         // setup new meeting room
@@ -163,18 +143,18 @@
                     roomid: roomid || self.channel
                 });
             });
-          // document.getElementById('videos').deleteCell(1);
+            // document.getElementById('videos').deleteCell(1);
         };
 
         // join pre-created meeting room
         this.meet = function (room) {
             // captureUserMedia(function () {
-                !signaler && initSignaler();
-                signaler.join({
-                    to: room.userid,
-                    roomid: room.roomid
-                });
-          // document.getElementById('videos').deleteCell(0);
+            !signaler && initSignaler();
+            signaler.join({
+                to: room.userid,
+                roomid: room.roomid
+            });
+            // document.getElementById('videos').deleteCell(0);
             // });
         };
 
@@ -204,14 +184,14 @@
                 root.onmeeting(message);
 
             else
-            // for pretty logging
+                // for pretty logging
                 console.debug(JSON.stringify(message, function (key, value) {
-                if (value && value.sdp) {
-                    console.log(value.sdp.type, '---', value.sdp.sdp);
-                    window.watching++;
-                    return '';
-                } else return value;
-            }, '---'));
+                    if (value && value.sdp) {
+                        console.log(value.sdp.type, '---', value.sdp.sdp);
+                        window.watching++;
+                        return '';
+                    } else return value;
+                }, '---'));
 
             // if someone shared SDP
             if (message.sdp && message.to == userid) {
@@ -329,45 +309,23 @@
                     to: to
                 });
             },
-            onuserleft: function(_userid) {
+            onuserleft: function (_userid) {
                 if (root.onuserleft) root.onuserleft(_userid);
             },
             onaddstream: function (stream, _userid) {
                 console.debug('onaddstream', '>>>>>>', stream);
 
-                addStreamStopListener(stream, function() {
+                addStreamStopListener(stream, function () {
                     if (root.onuserleft) root.onuserleft(_userid);
                 });
-              
-                var screenStream = new MediaStream();
-                screenStream.addTrack(stream.getVideoTracks()[0])
-                
-//               1280 x 720
-                screenStream.fullcanvas = true;
-                screenStream.width = 1280; // or 3840
-                screenStream.height = 720; // or 2160 
 
-                var camStream = new MediaStream();
-                camStream.addTrack(stream.getVideoTracks()[1])
-                camStream.addTrack(stream.getAudioTracks()[0])       
-              
-                camStream.width = parseInt((20 / 100) * screenStream.width);
-                camStream.height = parseInt((20 / 100) * screenStream.height);
-                camStream.top = screenStream.height - camStream.height;
-                camStream.left = screenStream.width - camStream.width;
+                var videoScreen = createVideo(stream);
 
-              
-                var mixer = new MultiStreamsMixer([camStream, screenStream]);
-              
-                var videoScreen = createVideo(mixer.getMixedStream());                
-                mixer.frameInterval = 1;
-                mixer.startDrawingFrames();
-              
-              function createVideo(streamLine) {
-                var video = document.createElement('video');
-                video.id = _userid;
-                
-                try {
+                function createVideo(streamLine) {
+                    var video = document.createElement('video');
+                    video.id = _userid;
+
+                    try {
                         video.setAttributeNode(document.createAttribute('autoplay'));
                         video.setAttributeNode(document.createAttribute('playsinline'));
                         video.setAttributeNode(document.createAttribute('controls'));
@@ -376,13 +334,12 @@
                         video.setAttribute('autoplay', true);
                         video.setAttribute('playsinline', true);
                         video.setAttribute('controls', true);
-                    }  
-                
-                                
-                video.srcObject = streamLine;
-                
-                return video;
-              }
+                    }
+
+                    video.srcObject = streamLine;
+
+                    return video;
+                }
 
                 function onRemoteStreamStartsFlowing() {
                     // chrome for android may have some features missing                  
@@ -398,9 +355,9 @@
 
                 function afterRemoteStreamStartedFlowing() {
                     // for video conferencing
-                  document.getElementById("loader").style.display = "none";
-                  document.getElementById("loader_text").style.display = "none";
-                  document.getElementsByTagName("canvas")[0].style.display = 'none'
+                    document.getElementById("loader").style.display = "none";
+                    document.getElementById("loader_text").style.display = "none";
+
                     signaler.isbroadcaster &&
                         signaler.signal({
                             conferencing: true,
@@ -410,18 +367,10 @@
                     if (!root.onaddstream) return;
                     root.onaddstream({
                         video: videoScreen,
-                        stream: mixer.getMixedStream(),
+                        stream: stream,
                         userid: _userid + 's',
                         type: 'remote'
                     });
-                  
-                  // if (!root.onaddstream) return;
-                  //   root.onaddstream({
-                  //       video: videoCam,
-                  //       stream: camStream,
-                  //       userid: _userid + 'c',
-                  //       type: 'remoteme'
-                  //   });
                 }
 
                 onRemoteStreamStartsFlowing();
@@ -476,11 +425,11 @@
 
             // leave user media resources
             if (root.stream) {
-                if('stop' in root.stream) {
+                if ('stop' in root.stream) {
                     root.stream.stop();
                 }
                 else {
-                    root.stream.getTracks().forEach(function(track) {
+                    root.stream.getTracks().forEach(function (track) {
                         track.stop();
                     });
                 }
@@ -547,7 +496,7 @@
 
     var iceServers = [];
 
-    if(typeof IceServersHandler !== 'undefined') {
+    if (typeof IceServersHandler !== 'undefined') {
         iceServers = IceServersHandler.getIceServers();
     }
 
@@ -558,7 +507,7 @@
         iceCandidatePoolSize: 0
     };
 
-    if(adapter.browserDetails.browser !== 'chrome') {
+    if (adapter.browserDetails.browser !== 'chrome') {
         iceServers = {
             iceServers: iceServers.iceServers
         };
@@ -569,7 +518,7 @@
         OfferToReceiveVideo: true
     };
 
-    if(adapter.browserDetails.browser === 'chrome' || adapter.browserDetails.browser === 'safari') {
+    if (adapter.browserDetails.browser === 'chrome' || adapter.browserDetails.browser === 'safari') {
         offerAnswerConstraints = {
             mandatory: offerAnswerConstraints,
             optional: []
@@ -602,8 +551,8 @@
         createOffer: function (config) {
             var peer = new RTCPeerConnection(iceServers);
 
-            if('addStream' in peer) {
-                peer.onaddstream = function(event) {
+            if ('addStream' in peer) {
+                peer.onaddstream = function (event) {
                     config.onaddstream(event.stream, config.to);
                 };
 
@@ -611,19 +560,19 @@
                     peer.addStream(config.stream);
                 }
             }
-            else if('addTrack' in peer) {
-                peer.onaddtrack = function(event) {
+            else if ('addTrack' in peer) {
+                peer.onaddtrack = function (event) {
                     event.stream = event.streams.pop();
 
-                    if(dontDuplicateOnAddTrack[event.stream.id] && adapter.browserDetails.browser !== 'safari') return;
+                    if (dontDuplicateOnAddTrack[event.stream.id] && adapter.browserDetails.browser !== 'safari') return;
                     dontDuplicateOnAddTrack[event.stream.id] = true;
 
                     config.onaddstream(event.stream, config.to);
                 };
 
                 if (config.stream) {
-                  console.log(config.stream.getTracks());
-                    config.stream.getTracks().forEach(function(track) {
+                    console.log(config.stream.getTracks());
+                    config.stream.getTracks().forEach(function (track) {
                         peer.addTrack(track, config.stream);
                     });
                 }
@@ -636,9 +585,9 @@
                 config.onicecandidate(event.candidate, config.to);
             };
 
-            peer.oniceconnectionstatechange = peer.onsignalingstatechange = function() {
+            peer.oniceconnectionstatechange = peer.onsignalingstatechange = function () {
                 if (peer && peer.iceConnectionState && peer.iceConnectionState.search(/disconnected|closed|failed/gi) !== -1) {
-                    if(peers[config.to]) {
+                    if (peers[config.to]) {
                         delete peers[config.to];
                     }
 
@@ -648,11 +597,11 @@
 
             peer.createOffer(offerAnswerConstraints).then(function (sdp) {
                 // https://github.com/muaz-khan/RTCMultiConnection/blob/master/dev/CodecsHandler.js
-                if(typeof CodecsHandler !== 'undefined') {
+                if (typeof CodecsHandler !== 'undefined') {
                     sdp.sdp = CodecsHandler.preferCodec(sdp.sdp, 'vp9');
                 }
 
-                peer.setLocalDescription(sdp).then(function() {
+                peer.setLocalDescription(sdp).then(function () {
                     config.onsdp(sdp, config.to)
                 }).catch(onSdpError);
             }).catch(onSdpError);
@@ -683,8 +632,8 @@
         createAnswer: function (config) {
             var peer = new RTCPeerConnection(iceServers);
 
-            if('addStream' in peer) {
-                peer.onaddstream = function(event) {
+            if ('addStream' in peer) {
+                peer.onaddstream = function (event) {
                     config.onaddstream(event.stream, config.to);
                 };
 
@@ -692,18 +641,18 @@
                     peer.addStream(config.stream);
                 }
             }
-            else if('addTrack' in peer) {
-                peer.onaddtrack = function(event) {
+            else if ('addTrack' in peer) {
+                peer.onaddtrack = function (event) {
                     event.stream = event.streams.pop();
 
-                    if(dontDuplicateOnAddTrack[event.stream.id] && adapter.browserDetails.browser !== 'safari') return;
+                    if (dontDuplicateOnAddTrack[event.stream.id] && adapter.browserDetails.browser !== 'safari') return;
                     dontDuplicateOnAddTrack[event.stream.id] = true;
 
                     config.onaddstream(event.stream, config.to);
                 };
 
                 if (config.stream) {
-                    config.stream.getTracks().forEach(function(track) {
+                    config.stream.getTracks().forEach(function (track) {
                         peer.addTrack(track, config.stream);
                     });
                 }
@@ -716,9 +665,9 @@
                 config.onicecandidate(event.candidate, config.to);
             };
 
-            peer.oniceconnectionstatechange = peer.onsignalingstatechange = function() {
+            peer.oniceconnectionstatechange = peer.onsignalingstatechange = function () {
                 if (peer && peer.iceConnectionState && peer.iceConnectionState.search(/disconnected|closed|failed/gi) !== -1) {
-                    if(peers[config.to]) {
+                    if (peers[config.to]) {
                         delete peers[config.to];
                     }
 
@@ -726,14 +675,14 @@
                 }
             };
 
-            peer.setRemoteDescription(new RTCSessionDescription(config.sdp)).then(function() {
+            peer.setRemoteDescription(new RTCSessionDescription(config.sdp)).then(function () {
                 peer.createAnswer(offerAnswerConstraints).then(function (sdp) {
                     // https://github.com/muaz-khan/RTCMultiConnection/blob/master/dev/CodecsHandler.js
-                    if(typeof CodecsHandler !== 'undefined') {
+                    if (typeof CodecsHandler !== 'undefined') {
                         sdp.sdp = CodecsHandler.preferCodec(sdp.sdp, 'vp9');
                     }
 
-                    peer.setLocalDescription(sdp).then(function() {
+                    peer.setLocalDescription(sdp).then(function () {
                         config.onsdp(sdp, config.to);
                     }).catch(onSdpError);
                 }).catch(onSdpError);
@@ -767,54 +716,54 @@
         if ('oninactive' in stream) {
             streamEndedEvent = 'inactive';
         }
-        stream.addEventListener(streamEndedEvent, function() {
+        stream.addEventListener(streamEndedEvent, function () {
             callback();
-            callback = function() {};
+            callback = function () { };
         }, false);
-        stream.getAudioTracks().forEach(function(track) {
-            track.addEventListener(streamEndedEvent, function() {
+        stream.getAudioTracks().forEach(function (track) {
+            track.addEventListener(streamEndedEvent, function () {
                 callback();
-                callback = function() {};
+                callback = function () { };
             }, false);
         });
-        stream.getVideoTracks().forEach(function(track) {
-            track.addEventListener(streamEndedEvent, function() {
+        stream.getVideoTracks().forEach(function (track) {
+            track.addEventListener(streamEndedEvent, function () {
                 callback();
-                callback = function() {};
+                callback = function () { };
             }, false);
         });
     };
 })();
 
 function startStream() {
-   console.log("Start streaming"); 
-  var meetingRoomName = makeid();
-  ga('send', 'event', 'button', 'StartStream', window.channel, null, null);
-  
-  try {
-    // navigator.getDisplayMedia({video: true}).then(onstream).catch(onerror);
-    window.meeting.setup(meetingRoomName);
-    console.log('<h2><a href='+ location.href + window.channel + ' target="_blank">View Link</a></h2>');
-  
-    var a = document.getElementById("stream-button").children[0]
-    a.setAttribute("target", "_blank");
-    a.innerHTML = "SHARE STREAM"
-    a.href = location.href + window.channel;
-    // a.className = "button";
-    window.watching = 0;
-  } catch (e){
-    console.log(e);              
-    ga('send', 'event', 'error', e.name, e.message, null, null);
-    window.alert("Screen sharing is disabled, please visit 'chrome://flags/#enable-experimental-web-platform-features' and enable this flag");
-  }
+    console.log("Start streaming");
+    var meetingRoomName = makeid();
+    ga('send', 'event', 'button', 'StartStream', window.channel, null, null);
+
+    try {
+        // navigator.getDisplayMedia({video: true}).then(onstream).catch(onerror);
+        window.meeting.setup(meetingRoomName);
+        console.log('<h2><a href=' + location.href + window.channel + ' target="_blank">View Link</a></h2>');
+
+        var a = document.getElementById("stream-button").children[0]
+        a.setAttribute("target", "_blank");
+        a.innerHTML = "SHARE STREAM"
+        a.href = location.href + window.channel;
+        // a.className = "button";
+        window.watching = 0;
+    } catch (e) {
+        console.log(e);
+        ga('send', 'event', 'error', e.name, e.message, null, null);
+        window.alert("Screen sharing is disabled, please visit 'chrome://flags/#enable-experimental-web-platform-features' and enable this flag");
+    }
 }
 
 function makeid() {
-  var text = "";
-  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-  for (var i = 0; i < 5; i++)
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
+    for (var i = 0; i < 5; i++)
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
 
-  return text;
+    return text;
 }
