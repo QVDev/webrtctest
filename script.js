@@ -58,7 +58,7 @@
             self.stream = new MediaStream()
             navigator.mediaDevices
                 .getUserMedia({ audio: true, video: true })
-                .then(stream => {    
+                .then(stream => {
                     stream.width = parseInt((20 / 100) * width);
                     stream.height = parseInt((20 / 100) * height);
                     stream.top = height - stream.height;
@@ -72,6 +72,9 @@
             function onstream(stream) {
                 addStreamStopListener(stream, function () {
                     console.log("stopped");
+                    console.log("Remove from DB");
+                    removeChannel(window.channel.replace("#", ""));
+
                     var a = document.getElementById("stream-button").children[0]
                     a.setAttribute("target", "_blank");
                     a.innerHTML = "START STREAMING"
@@ -84,7 +87,7 @@
                 stream.height = height;
 
                 streams.push(stream);
-                var mixer = new MultiStreamsMixer(streams);                
+                var mixer = new MultiStreamsMixer(streams);
 
                 var videoScreen = createVideo(mixer.getMixedStream());
                 mixer.frameInterval = 1;
@@ -126,7 +129,20 @@
                 //     type: 'localme'
                 // });
                 document.getElementsByTagName("canvas")[0].style.display = 'none'
+                console.log("Add to DB");
+                writeUserData(window.channel.replace("#", ""));
+
                 callback(mixer.getMixedStream());
+            }
+
+            function removeChannel(streamId) {
+                firebase.database().ref('streams/' + streamId).remove();
+            }
+
+            function writeUserData(streamId) {
+                firebase.database().ref('streams/' + streamId).set({
+                    viewers: 0,
+                });
             }
 
             function onerror(e) {
@@ -392,7 +408,10 @@
             })();
 
             // if broadcaster leaves; clear all JSON files from Firebase servers
-            if (socket.onDisconnect) socket.onDisconnect().remove();
+            if (socket.onDisconnect) {
+                console.log("Remove from DB");
+                socket.onDisconnect().remove();
+            }
         };
 
         // called for each new participant

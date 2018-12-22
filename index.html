@@ -34,6 +34,7 @@
    <script src="https://cdn.webrtc-experiment.com/IceServersHandler.js"></script>
    <script src="https://cdn.webrtc-experiment.com/MultiStreamsMixer.min.js"></script>
    <script src="script.js"> </script>
+
 </head>
 
 <body>
@@ -175,6 +176,7 @@
    </div>
    <div id="features" class="section centered">
       <div class="w-container">
+         <div id="available_streams"></div>
          <h2 class="section-title">Build for YOU with simplicity in mind</h2>
          <div class="w-row">
             <div class="w-col w-col-4 w-col-small-4">
@@ -226,6 +228,34 @@
          document.getElementById("loader_text").style.display = "none";
       }                       
    </script>
+
+   <script src="https://www.gstatic.com/firebasejs/5.7.1/firebase.js"></script>
+
+   <script>
+      // Initialize Firebase
+      var config = {
+         apiKey: "AIzaSyCqwaDvvQLU7r9vPIwVagF9zxO3I-L50Lc",
+         authDomain: "liveconding.firebaseapp.com",
+         databaseURL: "https://liveconding.firebaseio.com",
+         projectId: "liveconding",
+         storageBucket: "liveconding.appspot.com",
+         messagingSenderId: "110342107464"
+      };
+      firebase.initializeApp(config);
+
+      // var streams = firebase.database().ref('streams').
+      firebase.database().ref("streams").on('value', (snapshot) => {
+         var content = '';
+         snapshot.forEach((child) => {
+            var link = '<a href=' + location.href + "#" +child.key + ' target="_blank">Show Stream</a>'            
+            content += link;
+            content += "<BR>";
+         });
+         content += "<BR>";
+         document.getElementById('available_streams').innerHTML = content;         
+      });
+   </script>
+
 </body>
 
 </html>
