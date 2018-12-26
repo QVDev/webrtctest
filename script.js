@@ -426,6 +426,7 @@
 
         window.onbeforeunload = function () {
             leaveRoom();
+            removeChannel(window.channel.replace("#", ""));
             // return 'You\'re leaving the session.';
         };
 
@@ -434,13 +435,21 @@
                 leaveRoom();
         };
 
+        function removeChannel(streamId) {
+            if (signaler.isbroadcaster) {
+                firebase.database().ref('streams/' + streamId).remove();
+            }
+        }
+
         function leaveRoom() {
             signaler.signal({
                 leaving: true
             });
 
             // stop broadcasting room
-            if (signaler.isbroadcaster) signaler.stopBroadcasting = true;
+            if (signaler.isbroadcaster) {
+                signaler.stopBroadcasting = true;
+            }
 
             // leave user media resources
             if (root.stream) {
