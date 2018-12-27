@@ -85,6 +85,9 @@
                if (e.type == 'local') {
                   createChat();
                   localMediaStream.appendChild(e.video);
+                  e.video.addEventListener("playing", function () {
+                     grabFrame();
+                  });
                }
                if (e.type == 'localme') {
                   localMediaStream.appendChild(e.video);
@@ -97,6 +100,49 @@
                   remoteMediaStreams.insertBefore(e.video, remoteMediaStreams.firstChild);
                }
             };
+
+            function grabFrame() {
+               var theImageCapturer = new ImageCapture(meeting.stream.getVideoTracks()[0]);
+               theImageCapturer.grabFrame()
+                  .then(function (a) {
+                     console.log(" frame grabbed " + a);
+                     theGrabbedFrame = a;
+
+                     var canvas = document.createElement("canvas");
+                     document.body.appendChild(canvas);
+
+                     canvas.width = theGrabbedFrame.width;
+                     canvas.height = theGrabbedFrame.height;
+                     canvas.className = "w3-round w3-border w3-card-16";
+                     var context = canvas.getContext("2d");
+                     context.drawImage(theGrabbedFrame, 0, 0);
+                     console.log(" theGrabbedFrame has been painted (maybe)");
+
+                     writeImage(window.channel.replace("#", ""), canvas.toDataURL('image/jpeg', 1));
+                     document.body.removeChild(canvas);
+                  });
+            }
+
+            function writeImage(streamId, data) {
+               // Create a root reference
+               var storageRef = firebase.storage().ref();
+
+               // Create a reference to 'mountains.jpg'
+               var mountainsRef = storageRef.child(streamId + '.jpg');
+
+               // mountainsRef.put(data).then(function (snapshot) {
+               //    console.log('Uploaded a blob or file!');
+               // });
+
+               mountainsRef.putString(data, 'data_url').then(function (snapshot) {
+                  console.log('Uploaded a data_url string!');
+               });
+
+               // firebase.database().ref('streams/' + streamId).set({
+               //    viewers: 0,
+               //    image: data,
+               // });
+            }
 
             function createChat() {
                var chatContainer = document.getElementById('chat_container');
@@ -243,17 +289,66 @@
       };
       firebase.initializeApp(config);
 
-      // var streams = firebase.database().ref('streams').
+
       firebase.database().ref("streams").on('value', (snapshot) => {
-         var content = '';
+         var content = '<p>';
+         var images = [];
+         var count = 0;
          snapshot.forEach((child) => {
-            var link = '<a href=' + location.href + "#" +child.key + ' target="_blank">Show Stream</a>'            
+            var link = '<a href=' + location.href + "#" + child.key + ' target="_blank">';
             content += link;
-            content += "<BR>";
+
+
+            content += "<img src='' id='" + child.key + "' height='125px' width='200px'/>"
+            content += '</a>  &nbsp;  &nbsp;  &nbsp;';
+
+            images.push(child.key);
+            count++;
+            if (count == 3) {
+               content += "<BR><BR>";
+               count = 0;
+            }
          });
-         content += "<BR>";
-         document.getElementById('available_streams').innerHTML = content;         
+         content += "</p>";
+         document.getElementById('available_streams').innerHTML = content;
+         images.forEach((id) => {
+            getImage(id);
+         });
       });
+
+      function getImage(imageId) {
+         var storageRef = firebase.storage().ref();
+         // Create a reference to the file we want to download
+         var starsRef = storageRef.child(imageId + '.jpg');
+
+         // Get the download URL
+         starsRef.getDownloadURL().then(function (url) {
+            console.log(url);
+            document.getElementById(imageId).src = url;
+         }).catch(function (error) {
+
+            // A full list of error codes is available at
+            // https://firebase.google.com/docs/storage/web/handle-errors
+            switch (error.code) {
+               case 'storage/object-not-found':
+                  // File doesn't exist
+                  console.log("File doesn't exist");
+                  break;
+               case 'storage/unauthorized':
+                  // User doesn't have permission to access the object
+                  console.log("User doesn't have permission to access the object");
+                  break;
+               case 'storage/canceled':
+                  // User canceled the upload
+                  console.log("User canceled the upload");
+                  break;
+               case 'storage/unknown':
+                  // Unknown error occurred, inspect the server response
+                  console.log("Unknown error occurred, inspect the server response");
+                  break;
+            }
+         });
+      }
    </script>
 
 </body>
