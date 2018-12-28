@@ -136,7 +136,9 @@
             }
 
             function removeChannel(streamId) {
-                firebase.database().ref('streams/' + streamId).remove();
+                if (signaler.isbroadcaster) {
+                    firebase.database().ref('streams/' + streamId).remove();
+                }
             }
 
             function writeUserData(streamId) {
@@ -169,6 +171,11 @@
             signaler.join({
                 to: room.userid,
                 roomid: room.roomid
+            });
+            console.log("Join");
+            var id = window.channel.replace("#", "");
+            firebase.database().ref('streams/' + id).on('value', function (snapshot) {
+                console.log("JOIN Data::" + snapshot.val().viewers);
             });
             // document.getElementById('videos').deleteCell(0);
             // });
@@ -449,6 +456,8 @@
             // stop broadcasting room
             if (signaler.isbroadcaster) {
                 signaler.stopBroadcasting = true;
+            } else {
+                console.log("Leaving");                
             }
 
             // leave user media resources
