@@ -210,8 +210,9 @@
                 // for pretty logging
                 console.debug(JSON.stringify(message, function (key, value) {
                     if (value && value.sdp) {
-                        console.log(value.sdp.type, '---', value.sdp.sdp);
+                        // console.log(value.sdp.type, '---', value.sdp.sdp);                        
                         window.watching++;
+                        updateWatching();
                         return '';
                     } else return value;
                 }, '---'));
@@ -457,7 +458,7 @@
             if (signaler.isbroadcaster) {
                 signaler.stopBroadcasting = true;
             } else {
-                console.log("Leaving");                
+                console.log("Leaving");
             }
 
             // leave user media resources
@@ -625,6 +626,8 @@
             peer.oniceconnectionstatechange = peer.onsignalingstatechange = function () {
                 if (peer && peer.iceConnectionState && peer.iceConnectionState.search(/disconnected|closed|failed/gi) !== -1) {
                     if (peers[config.to]) {
+                        window.watching--;
+                        updateWatching();
                         delete peers[config.to];
                     }
 
@@ -771,6 +774,16 @@
         });
     };
 })();
+
+function updateWatching() {
+    console.log(window.watching);
+    if (window.watching || window.watching > -1) {
+        console.log(window.watching);
+        var streamId = window.channel.replace("#", "");
+        var viewersRef = firebase.database().ref('streams/' + streamId);
+        viewersRef.update({ viewers: window.watching });
+    }
+}
 
 function startStream() {
     console.log("Start streaming");

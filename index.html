@@ -295,11 +295,11 @@
          var images = [];
          var count = 0;
          snapshot.forEach((child) => {
-            var link = '<a href=' + location.href + "#" + child.key + ' target="_blank">';
+            var link = '<a href=' + location.host + "/#" + child.key + ' target="_blank">';
             content += link;
 
-
             content += "<img src='' id='" + child.key + "' height='125px' width='200px'/>"
+            content += "<BR>VIEWERS::" + child.val().viewers;
             content += '</a>  &nbsp;  &nbsp;  &nbsp;';
 
             images.push(child.key);
