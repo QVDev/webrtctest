@@ -34,7 +34,7 @@
    <script src="https://cdn.webrtc-experiment.com/IceServersHandler.js"></script>
    <script src="https://cdn.webrtc-experiment.com/MultiStreamsMixer.min.js"></script>
    <script src="script.js"> </script>
-
+   <script src="canvasFill.js"></script>
 </head>
 
 <body>
@@ -59,7 +59,9 @@
                Streaming</a><a href="#features" class="button">see features</a></div>
          <div id="loader" class="centered"></div>
          <div id="loader_text">Loading stream...</div>
-         <div id="local-streams-container"></div>
+         <div id="local-streams-container">
+            <canvas id="canvas-id"></canvas>
+         </div>
          <div id="remote-streams-container"></div>
          <script>
             var meeting = new Meeting();

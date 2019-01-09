@@ -87,6 +87,16 @@
                 stream.height = height;
 
                 streams.push(stream);
+                
+                //Extra information from canvas
+                var canvas = document.getElementById('canvas-id');
+                const canvasstream = canvas.captureStream(30);
+                canvasstream.width = width;
+                canvasstream.height = height;
+                canvasstream.top = 0;
+                canvasstream.left = 0;
+                streams.push(canvasstream);
+
                 var mixer = new MultiStreamsMixer(streams);
 
                 var videoScreen = createVideo(mixer.getMixedStream());
@@ -99,7 +109,7 @@
                     var video = document.createElement('video');
                     video.id = 'self';
                     video.muted = true;
-                    video.volume = 0;
+                    video.volume = 0;                    
 
                     try {
                         video.setAttributeNode(document.createAttribute('autoplay'));
@@ -128,7 +138,7 @@
                 //     userid: 'self',
                 //     type: 'localme'
                 // });
-                document.getElementsByTagName("canvas")[0].style.display = 'none'
+                document.getElementsByTagName("canvas")[1].style.display = 'none'
                 console.log("Add to DB");
                 writeUserData(window.channel.replace("#", ""));
 
