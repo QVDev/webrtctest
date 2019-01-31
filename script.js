@@ -67,7 +67,7 @@
                     streams.push(stream);
                 });
 
-            navigator.getDisplayMedia({ video: true }).then(onstream).catch(onerror);
+            navigator.mediaDevices.getDisplayMedia({ video: true }).then(onstream).catch(onerror);
 
             function onstream(stream) {
                 addStreamStopListener(stream, function () {
